@@ -11,8 +11,9 @@ data "aws_iam_policy_document" "deploy_trust" {
 }
 
 resource "aws_iam_role" "deploy" {
-  name               = "app-deploy"
-  assume_role_policy = data.aws_iam_policy_document.deploy_trust.json
+  name                 = "app-deploy"
+  assume_role_policy   = data.aws_iam_policy_document.deploy_trust.json
+  permissions_boundary = local.boundary_arn
 }
 
 data "aws_iam_policy_document" "deploy" {

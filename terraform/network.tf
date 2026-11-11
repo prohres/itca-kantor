@@ -22,6 +22,7 @@ resource "aws_security_group" "alb" {
 }
 
 resource "aws_vpc_security_group_ingress_rule" "alb_http" {
+  #checkov:skip=CKV_AWS_260:Public HTTP site; HTTPS is on the roadmap
   security_group_id = aws_security_group.alb.id
   description       = "HTTP from anywhere"
   cidr_ipv4         = "0.0.0.0/0"

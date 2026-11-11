@@ -1,0 +1,68 @@
+name: terraform-apply
+
+on:
+  push:
+    branches: [develop]
+
+# One apply at a time across merge, up, down and the nightly down
+concurrency:
+  group: kantor-infra-apply
+  cancel-in-progress: false
+
+permissions: {}
+
+# Account ids are repo variables (Settings → Variables), not code: the repo is public.
+jobs:
+  # A merge while the stack is down applies nothing (and asks for no approval): the next up applies this commit
+  state:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      up: ${{ steps.check.outputs.up }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: prohres/ci-templates/actions/tf-setup@v1
+        with:
+          working-directory: terraform
+          gha-role-arn: arn:aws:iam::${{ vars.CI_ACCOUNT_ID }}:role/gha-kantor-plan
+          target-role-arn: arn:aws:iam::${{ vars.DEV_ACCOUNT_ID }}:role/kantor-tf-plan
+          target-account-id: ${{ vars.DEV_ACCOUNT_ID }}
+          backend-config: terraform/backend.hcl
+          backend-bucket: sketch-tfstate-${{ vars.ROOT_ACCOUNT_ID }}
+          tf-vars: '{"admin_account_id": "${{ vars.CI_ACCOUNT_ID }}"}'
+
+      - name: Is the stack up?
+        id: check
+        working-directory: terraform
+        shell: bash
+        run: |
+          count=$( { terraform state list | grep -vc '^data\.'; } || true ) # managed resources only
+          echo "up=$([[ "$count" -gt 0 ]] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          echo "Managed resources in state: ${count}" >> "$GITHUB_STEP_SUMMARY"
+
+  apply:
+    needs: state
+    if: needs.state.outputs.up == 'true'
+    permissions:
+      contents: read
+      id-token: write
+    uses: prohres/ci-templates/.github/workflows/tf-apply.yml@v1
+    with:
+      stacks: '["terraform"]'
+      plan-gha-role-arn: arn:aws:iam::${{ vars.CI_ACCOUNT_ID }}:role/gha-kantor-plan
+      plan-target-role-arn: arn:aws:iam::${{ vars.DEV_ACCOUNT_ID }}:role/kantor-tf-plan
+      apply-gha-role-arn: arn:aws:iam::${{ vars.CI_ACCOUNT_ID }}:role/gha-kantor-apply
+      apply-target-role-arn: arn:aws:iam::${{ vars.DEV_ACCOUNT_ID }}:role/kantor-tf-apply
+      target-account-id: ${{ vars.DEV_ACCOUNT_ID }}
+      plan-bucket: sketch-tfplans-${{ vars.ROOT_ACCOUNT_ID }}
+      plan-prefix: kantor-infra
+      environment: dev # required reviewer
+      backend-config: terraform/backend.hcl
+      backend-bucket: sketch-tfstate-${{ vars.ROOT_ACCOUNT_ID }}
+      tf-vars: '{"admin_account_id": "${{ vars.CI_ACCOUNT_ID }}"}'
