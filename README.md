@@ -29,7 +29,6 @@ Source: [`architecture.drawio`](architecture.drawio) (draw.io); re-export the PN
 kantor PR      → lint · secret scan · build · image scan            (no AWS access)
 kantor develop → build once → push ECR kantor:<sha>
                → deploy dev (ECS, new task definition revision) → smoke test
-               → prod environment approval → tag the same digest prod-<sha>
 ```
 
 Rollback: re-run the deploy with an earlier digest; a deploy that never gets healthy is rolled back by the
@@ -52,10 +51,10 @@ ECS deployment circuit breaker.
 
 | Decision | Why |
 |---|---|
-| Registry in the CI hub, not in a workload account | every environment pulls the same digest; prod never depends on the dev account |
-| Lifecycle: keep 10 `prod-*`, drop untagged after 1 day, keep the last 20 builds | promoted images stay available for rollback; a higher-priority rule protects them from the catch-all rule |
+| Registry in the CI hub, not in a workload account | the registry outlives any one environment; a new account only needs pull access |
+| Lifecycle: drop untagged after 1 day, keep the last 20 builds | old builds stay available for rollback; the registry never grows without bound |
 | CI owns the task definition (`ignore_changes`), Terraform creates the service with a placeholder image | otherwise every `terraform apply` would roll the service back to the image in code |
-| `app-deploy` can update this one service and pass only the execution role to `ecs-tasks` | CI rolls out new revisions but can't change the infrastructure or hand the service another role |
+| `app-deploy` can update this one service and pass only the execution role to `ecs-tasks` | CI rolls out new revisions but can't change the infrastructure or hand the service another role; it may read load balancers to find the smoke URL (Describe only) |
 | Public IP on tasks instead of NAT | NAT costs more than the whole demo; the task security group accepts traffic only from the ALB |
 | Account ids out of git (local tfvars here, repo variables in CI) | the repos are public; ids aren't secrets, but they are free reconnaissance |
 | Every checkov skip has a reason inline | HTTP without TLS, no WAF / access logs: accepted for the demo, listed in the roadmap |
@@ -77,7 +76,6 @@ Only the task stops; the ALB keeps running and billing — removing it between s
 
 ## Roadmap
 
-- [ ] prod environment in sketch-prod (pull access + second service)
 - [ ] scale to zero / destroy from CI between sessions
 - [ ] HTTPS: domain + ACM certificate
 - [ ] own VPC with private subnets
