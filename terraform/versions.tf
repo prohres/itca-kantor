@@ -5,7 +5,7 @@ terraform {
   }
 
   backend "s3" {
-    key = "itca-kantor/terraform.tfstate" # shared settings: backend.hcl
+    key = "kantor-infra/terraform.tfstate" # shared settings: backend.hcl
   }
 }
 
@@ -18,7 +18,7 @@ provider "aws" {
     role_arn = "arn:aws:iam::699353518928:role/OrganizationAccountAccessRole"
   }
   default_tags {
-    tags = { project = "kantor", env = "dev", managed-by = "terraform", repo = "prohres/itca-kantor" }
+    tags = { project = "kantor", env = "dev", managed-by = "terraform", repo = "prohres/kantor-infra" }
   }
 }
 
@@ -30,6 +30,6 @@ provider "aws" {
     role_arn = "arn:aws:iam::686337362279:role/OrganizationAccountAccessRole"
   }
   default_tags {
-    tags = { project = "kantor", managed-by = "terraform", repo = "prohres/itca-kantor" }
+    tags = { project = "kantor", managed-by = "terraform", repo = "prohres/kantor-infra" }
   }
 }

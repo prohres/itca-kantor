@@ -1,4 +1,4 @@
-# itca-kantor
+# kantor-infra
 
 Infrastructure for the [kantor](https://github.com/prohres/kantor) static site: a container on ECS Fargate
 behind an Application Load Balancer, images in a shared ECR registry. Built and deployed by GitHub Actions
@@ -7,7 +7,7 @@ with OIDC (no long-lived AWS keys), using reusable workflows from
 
 ## Before → after
 
-This repo started as a course final project (tag `legacy-codepipeline`, the old diagram is `itca-kantor.png` in that tag).
+This repo started as a course final project, renamed from `itca-kantor` (tag `legacy-codepipeline`, the old diagram is `itca-kantor.png` in that tag).
 
 | | Before (`legacy-codepipeline`) | After |
 |---|---|---|
@@ -19,9 +19,9 @@ This repo started as a course final project (tag `legacy-codepipeline`, the old 
 
 ## Architecture
 
-![Architecture](itca-kantor.png)
+![Architecture](architecture.png)
 
-Source: [`itca-kantor.drawio`](itca-kantor.drawio) (draw.io); re-export the PNG after every change.
+Source: [`architecture.drawio`](architecture.drawio) (draw.io); re-export the PNG after every change.
 
 ## Pipeline
 
@@ -78,4 +78,4 @@ Only the task stops; the ALB keeps running and billing — removing it between s
 - [ ] HTTPS: domain + ACM certificate
 - [ ] own VPC with private subnets
 - [ ] Terraform CI for this repo (plan on PR, apply after approval)
-- [x] architecture diagram (`itca-kantor.drawio`) for the new setup
+- [x] architecture diagram (`architecture.drawio`) for the new setup
