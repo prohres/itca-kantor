@@ -5,17 +5,18 @@ terraform {
   }
 
   backend "s3" {
-    key = "kantor-infra/terraform.tfstate" # shared settings: backend.hcl
+    key = "kantor-infra/terraform.tfstate" # shared settings: backend.hcl + backend.local.hcl (bucket)
   }
 }
 
 # Credentials come from the environment (AWS_PROFILE=sketch-root); each account is reached
 # through the role Organizations created in it, and allowed_account_ids pins the target.
+# Account ids come from accounts.auto.tfvars (not in git: the repo is public).
 provider "aws" {
   region              = "eu-central-1"
-  allowed_account_ids = ["699353518928"] # sketch-dev: the app runtime
+  allowed_account_ids = [var.dev_account_id] # sketch-dev: the app runtime
   assume_role {
-    role_arn = "arn:aws:iam::699353518928:role/OrganizationAccountAccessRole"
+    role_arn = "arn:aws:iam::${var.dev_account_id}:role/OrganizationAccountAccessRole"
   }
   default_tags {
     tags = { project = "kantor", env = "dev", managed-by = "terraform", repo = "prohres/kantor-infra" }
@@ -25,9 +26,9 @@ provider "aws" {
 provider "aws" {
   alias               = "admin"
   region              = "eu-central-1"
-  allowed_account_ids = ["686337362279"] # sketch-admin: CI hub, holds the shared registry
+  allowed_account_ids = [var.admin_account_id] # sketch-admin: CI hub, holds the shared registry
   assume_role {
-    role_arn = "arn:aws:iam::686337362279:role/OrganizationAccountAccessRole"
+    role_arn = "arn:aws:iam::${var.admin_account_id}:role/OrganizationAccountAccessRole"
   }
   default_tags {
     tags = { project = "kantor", managed-by = "terraform", repo = "prohres/kantor-infra" }

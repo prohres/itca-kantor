@@ -45,7 +45,8 @@ ECS deployment circuit breaker.
 | `alb.tf` | load balancer, target group, HTTP listener |
 | `ecs.tf` | cluster, logs, execution role, task definition, service |
 | `deploy_role.tf` | `app-deploy`: the only role CI uses in sketch-dev |
-| `variables.tf` | `desired_count`: 1 = on, 0 = app stopped between sessions |
+| `variables.tf` | account ids (validated, no defaults); `desired_count`: 1 = on, 0 = app stopped between sessions |
+| `*.example` | templates for the two local files kept out of git: `accounts.auto.tfvars`, `backend.local.hcl` |
 
 ## Design decisions
 
@@ -56,13 +57,16 @@ ECS deployment circuit breaker.
 | CI owns the task definition (`ignore_changes`), Terraform creates the service with a placeholder image | otherwise every `terraform apply` would roll the service back to the image in code |
 | `app-deploy` can update this one service and pass only the execution role to `ecs-tasks` | CI rolls out new revisions but can't change the infrastructure or hand the service another role |
 | Public IP on tasks instead of NAT | NAT costs more than the whole demo; the task security group accepts traffic only from the ALB |
+| Account ids out of git (local tfvars here, repo variables in CI) | the repos are public; ids aren't secrets, but they are free reconnaissance |
 | Every checkov skip has a reason inline | HTTP without TLS, no WAF / access logs: accepted for the demo, listed in the roadmap |
 
 ## Apply (manual)
 
 ```bash
 cd terraform
-AWS_PROFILE=sketch-root terraform init -backend-config=backend.hcl
+cp accounts.auto.tfvars.example accounts.auto.tfvars   # fill in the account ids
+cp backend.local.hcl.example backend.local.hcl          # fill in the state bucket
+AWS_PROFILE=sketch-root terraform init -backend-config=backend.hcl -backend-config=backend.local.hcl
 AWS_PROFILE=sketch-root terraform plan -out=app.tfplan
 AWS_PROFILE=sketch-root terraform apply app.tfplan
 terraform output url

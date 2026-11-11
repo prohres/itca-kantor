@@ -48,7 +48,7 @@ data "aws_iam_policy_document" "ecr_pull" {
     actions = ["ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer", "ecr:BatchCheckLayerAvailability"]
     principals {
       type        = "AWS"
-      identifiers = ["arn:aws:iam::${local.dev_account_id}:root"] # the account still has to grant it in IAM
+      identifiers = ["arn:aws:iam::${var.dev_account_id}:root"] # the account still has to grant it in IAM
     }
   }
 }
