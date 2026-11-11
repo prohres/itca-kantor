@@ -21,18 +21,12 @@ resource "aws_ecr_lifecycle_policy" "app" {
     rules = [
       {
         rulePriority = 1
-        description  = "Promoted images: keep the last 10 for rollback"
-        selection    = { tagStatus = "tagged", tagPrefixList = ["prod-"], countType = "imageCountMoreThan", countNumber = 10 }
-        action       = { type = "expire" }
-      },
-      {
-        rulePriority = 2
         description  = "Untagged layers left by failed pushes"
         selection    = { tagStatus = "untagged", countType = "sinceImagePushed", countUnit = "days", countNumber = 1 }
         action       = { type = "expire" }
       },
       {
-        rulePriority = 3
+        rulePriority = 2
         description  = "Every other build: keep the last 20"
         selection    = { tagStatus = "any", countType = "imageCountMoreThan", countNumber = 20 }
         action       = { type = "expire" }

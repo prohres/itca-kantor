@@ -27,6 +27,11 @@ data "aws_iam_policy_document" "deploy" {
     resources = [aws_ecs_service.app.id]
   }
   statement {
+    sid       = "FindTheSmokeUrl" # service -> target group -> load balancer DNS name
+    actions   = ["elasticloadbalancing:DescribeTargetGroups", "elasticloadbalancing:DescribeLoadBalancers"]
+    resources = ["*"] # Describe calls have no resource-level scoping
+  }
+  statement {
     sid       = "PassOnlyTheExecutionRole"
     actions   = ["iam:PassRole"]
     resources = [aws_iam_role.execution.arn]
