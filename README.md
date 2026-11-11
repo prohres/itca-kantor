@@ -93,6 +93,5 @@ Prefer `env-switch` for up / down: CI runs as narrow roles; a local apply runs a
 
 - [ ] HTTPS: domain + ACM certificate
 - [ ] own VPC with private subnets
-- [ ] update the architecture diagram: registry in sketch-dev, up / down workflows
-- [x] architecture diagram (`architecture.drawio`) for the new setup
+- [x] architecture diagram (`architecture.drawio`): registry in sketch-dev, up / down workflows, CI roles and boundary
 - [x] Terraform CI for this repo: plan on PR, apply after approval, up / down and nightly down
