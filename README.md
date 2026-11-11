@@ -7,7 +7,7 @@ with OIDC (no long-lived AWS keys), using reusable workflows from
 
 ## Before → after
 
-This repo started as a course final project (tag `legacy-codepipeline`, old diagram `itca-kantor.png` in that tag).
+This repo started as a course final project (tag `legacy-codepipeline`, the old diagram is `itca-kantor.png` in that tag).
 
 | | Before (`legacy-codepipeline`) | After |
 |---|---|---|
@@ -16,6 +16,12 @@ This repo started as a course final project (tag `legacy-codepipeline`, old diag
 | Image | pushed as `:latest` + short SHA (mutable tags) | built once, `IMMUTABLE` tags, deployed and promoted by digest |
 | Accounts | one account | registry in the CI hub (sketch-admin), runtime in a workload account (sketch-dev) |
 | Network | own VPC + NAT | default VPC, public subnets, no NAT (demo); tasks reachable only from the ALB |
+
+## Architecture
+
+![Architecture](itca-kantor.png)
+
+Source: [`itca-kantor.drawio`](itca-kantor.drawio) (draw.io); re-export the PNG after every change.
 
 ## Pipeline
 
@@ -68,4 +74,4 @@ terraform output url
 - [ ] HTTPS: domain + ACM certificate
 - [ ] own VPC with private subnets
 - [ ] Terraform CI for this repo (plan on PR, apply after approval)
-- [ ] architecture diagram (`itca-kantor.drawio`) for the new setup
+- [x] architecture diagram (`itca-kantor.drawio`) for the new setup
