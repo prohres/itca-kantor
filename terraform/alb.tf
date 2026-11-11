@@ -2,6 +2,7 @@ resource "aws_lb" "app" {
   #checkov:skip=CKV_AWS_91:Access logs need a log bucket; revisit with a log-archive account
   #checkov:skip=CKV2_AWS_28:No WAF for the demo (cost)
   #checkov:skip=CKV_AWS_150:Deletion protection off on purpose: the env is scaled down / destroyed between sessions
+  #checkov:skip=CKV2_AWS_20:No certificate yet; HTTPS is on the roadmap
   name                       = "${local.app}-${local.env}"
   load_balancer_type         = "application"
   security_groups            = [aws_security_group.alb.id]
@@ -10,6 +11,7 @@ resource "aws_lb" "app" {
 }
 
 resource "aws_lb_target_group" "app" {
+  #checkov:skip=CKV_AWS_378:HTTP inside the VPC between the ALB and the task; TLS will end at the ALB
   name                 = "${local.app}-${local.env}"
   port                 = local.container_port
   protocol             = "HTTP"

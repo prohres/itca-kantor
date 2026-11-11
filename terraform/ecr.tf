@@ -1,9 +1,9 @@
-# One registry for every environment, in the CI hub: environments pull the same digest
+# Registry of this environment, inside the stack: destroyed with it (images too), rebuilt by CI after up
 resource "aws_ecr_repository" "app" {
   #checkov:skip=CKV_AWS_136:AES256 on purpose (no KMS cost); access is limited by IAM
-  provider             = aws.admin
   name                 = local.app
   image_tag_mutability = "IMMUTABLE" # a tag can never point to another image
+  force_delete         = true        # down removes the images as well; otherwise destroy fails on a non-empty repo
 
   image_scanning_configuration {
     scan_on_push = true # basic scan; CI also runs trivy before the push
@@ -15,7 +15,6 @@ resource "aws_ecr_repository" "app" {
 }
 
 resource "aws_ecr_lifecycle_policy" "app" {
-  provider   = aws.admin
   repository = aws_ecr_repository.app.name
   policy = jsonencode({
     rules = [
@@ -35,20 +34,21 @@ resource "aws_ecr_lifecycle_policy" "app" {
   })
 }
 
-# Workload accounts pull; pushing stays with the CI role in this account
-data "aws_iam_policy_document" "ecr_pull" {
+# The build role in the CI hub pushes across accounts; tasks here pull through the execution role (IAM)
+data "aws_iam_policy_document" "ecr_push" {
   statement {
-    sid     = "WorkloadPull"
-    actions = ["ecr:BatchGetImage", "ecr:GetDownloadUrlForLayer", "ecr:BatchCheckLayerAvailability"]
+    sid = "CiHubBuildPush"
+    actions = ["ecr:BatchCheckLayerAvailability", "ecr:InitiateLayerUpload", "ecr:UploadLayerPart",
+      "ecr:CompleteLayerUpload", "ecr:PutImage", "ecr:BatchGetImage", "ecr:DescribeImages",
+    "ecr:DescribeRepositories"]
     principals {
       type        = "AWS"
-      identifiers = ["arn:aws:iam::${var.dev_account_id}:root"] # the account still has to grant it in IAM
+      identifiers = ["arn:aws:iam::${var.admin_account_id}:role/gha-app-build"] # one role, not the account
     }
   }
 }
 
 resource "aws_ecr_repository_policy" "app" {
-  provider   = aws.admin
   repository = aws_ecr_repository.app.name
-  policy     = data.aws_iam_policy_document.ecr_pull.json
+  policy     = data.aws_iam_policy_document.ecr_push.json
 }

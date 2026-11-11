@@ -1,4 +1,5 @@
 resource "aws_ecs_cluster" "app" {
+  #checkov:skip=CKV_AWS_65:Container Insights off on purpose (cost); service metrics in CloudWatch are enough
   name = "${local.app}-${local.env}"
   setting {
     name  = "containerInsights"
@@ -25,8 +26,9 @@ data "aws_iam_policy_document" "ecs_tasks_trust" {
 
 # Used by the ECS agent to pull the image and write logs; the app itself needs no AWS access
 resource "aws_iam_role" "execution" {
-  name               = "${local.app}-${local.env}-execution"
-  assume_role_policy = data.aws_iam_policy_document.ecs_tasks_trust.json
+  name                 = "${local.app}-${local.env}-execution"
+  assume_role_policy   = data.aws_iam_policy_document.ecs_tasks_trust.json
+  permissions_boundary = local.boundary_arn
 }
 
 resource "aws_iam_role_policy_attachment" "execution" {
@@ -60,6 +62,7 @@ resource "aws_ecs_task_definition" "app" {
 }
 
 resource "aws_ecs_service" "app" {
+  #checkov:skip=CKV_AWS_333:Public IP instead of NAT (cost); the task security group accepts only the ALB
   name                              = local.app
   cluster                           = aws_ecs_cluster.app.id
   task_definition                   = aws_ecs_task_definition.app.arn

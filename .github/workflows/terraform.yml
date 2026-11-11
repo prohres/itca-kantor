@@ -1,0 +1,30 @@
+name: terraform
+
+on:
+  pull_request:
+    branches: [develop]
+
+# A newer push to the same PR supersedes the running plan
+concurrency:
+  group: terraform-plan-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions: {} # nothing by default; the job below grants only what the template needs
+
+# Account ids are repo variables (Settings → Variables), not code: the repo is public.
+# While the stack is down the plan shows the whole stack to create: expected.
+jobs:
+  plan:
+    permissions:
+      contents: read
+      id-token: write
+      pull-requests: write
+    uses: prohres/ci-templates/.github/workflows/tf-plan.yml@v1
+    with:
+      stacks: '["terraform"]'
+      gha-role-arn: arn:aws:iam::${{ vars.CI_ACCOUNT_ID }}:role/gha-kantor-plan
+      target-role-arn: arn:aws:iam::${{ vars.DEV_ACCOUNT_ID }}:role/kantor-tf-plan
+      target-account-id: ${{ vars.DEV_ACCOUNT_ID }}
+      backend-config: terraform/backend.hcl
+      backend-bucket: sketch-tfstate-${{ vars.ROOT_ACCOUNT_ID }}
+      tf-vars: '{"admin_account_id": "${{ vars.CI_ACCOUNT_ID }}"}'

@@ -1,0 +1,76 @@
+name: env-switch
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: up = create the whole stack, down = destroy all of it
+        type: choice
+        options: [up, down]
+  schedule:
+    # Nightly down at 23:00 Europe/Kyiv. Cron is UTC only and Kyiv is UTC+2 / UTC+3, so both run;
+    # the guard lets through 23:xx and 00:xx Kyiv (a second down is a no-op), never 22:xx.
+    - cron: "0 20 * * *"
+    - cron: "0 21 * * *"
+
+# One apply at a time across merge, up, down and the nightly down
+concurrency:
+  group: kantor-infra-apply
+  cancel-in-progress: false
+
+permissions: {}
+
+# Account ids are repo variables (Settings → Variables), not code: the repo is public.
+jobs:
+  decide:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    outputs:
+      action: ${{ steps.decide.outputs.action }}
+    steps:
+      - id: decide
+        shell: bash
+        env:
+          EVENT: ${{ github.event_name }}
+          INPUT: ${{ inputs.action }}
+        run: |
+          if [[ "$EVENT" == schedule ]]; then
+            case "$(TZ=Europe/Kyiv date +%H)" in 23|00) action=down ;; *) action=skip ;; esac
+          else
+            action="$INPUT"
+          fi
+          echo "action=${action}" >> "$GITHUB_OUTPUT"
+          echo "Action: ${action}" >> "$GITHUB_STEP_SUMMARY"
+
+  switch:
+    needs: decide
+    if: needs.decide.outputs.action != 'skip'
+    permissions:
+      contents: read
+      id-token: write
+    uses: prohres/ci-templates/.github/workflows/tf-apply.yml@v1
+    with:
+      stacks: '["terraform"]'
+      plan-gha-role-arn: arn:aws:iam::${{ vars.CI_ACCOUNT_ID }}:role/gha-kantor-plan
+      plan-target-role-arn: arn:aws:iam::${{ vars.DEV_ACCOUNT_ID }}:role/kantor-tf-plan
+      apply-gha-role-arn: arn:aws:iam::${{ vars.CI_ACCOUNT_ID }}:role/gha-kantor-apply
+      apply-target-role-arn: arn:aws:iam::${{ vars.DEV_ACCOUNT_ID }}:role/kantor-tf-apply
+      target-account-id: ${{ vars.DEV_ACCOUNT_ID }}
+      plan-bucket: sketch-tfplans-${{ vars.ROOT_ACCOUNT_ID }}
+      plan-prefix: kantor-infra
+      environment: dev-switch # no reviewers: the click (or the schedule) is the decision
+      destroy: ${{ needs.decide.outputs.action == 'down' }}
+      backend-config: terraform/backend.hcl
+      backend-bucket: sketch-tfstate-${{ vars.ROOT_ACCOUNT_ID }}
+      tf-vars: '{"admin_account_id": "${{ vars.CI_ACCOUNT_ID }}"}'
+
+  next-step:
+    needs: [decide, switch]
+    if: needs.decide.outputs.action == 'up' && needs.switch.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - name: What to run next
+        run: echo "Stack is up. Build and deploy the app — kantor → Actions → app → Run workflow on develop." >> "$GITHUB_STEP_SUMMARY"
