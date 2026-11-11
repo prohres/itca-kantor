@@ -39,6 +39,7 @@ ECS deployment circuit breaker.
 | `alb.tf` | load balancer, target group, HTTP listener |
 | `ecs.tf` | cluster, logs, execution role, task definition, service |
 | `deploy_role.tf` | `app-deploy`: the only role CI uses in sketch-dev |
+| `variables.tf` | `desired_count`: 1 = on, 0 = app stopped between sessions |
 
 ## Design decisions
 
@@ -60,6 +61,9 @@ AWS_PROFILE=sketch-root terraform plan -out=app.tfplan
 AWS_PROFILE=sketch-root terraform apply app.tfplan
 terraform output url
 ```
+
+Stop the app between sessions: `terraform apply -var desired_count=0` (back on: `-var desired_count=1`).
+Only the task stops; the ALB keeps running and billing — removing it between sessions is on the roadmap.
 
 ## Roadmap
 
