@@ -1,0 +1,3 @@
+# Copy to accounts.auto.tfvars (not in git); Terraform loads it automatically.
+admin_account_id = "<ci-hub-account-id>"
+dev_account_id   = "<workload-account-id>"

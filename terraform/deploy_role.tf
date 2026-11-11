@@ -5,7 +5,7 @@ data "aws_iam_policy_document" "deploy_trust" {
     actions = ["sts:AssumeRole", "sts:TagSession"]
     principals {
       type        = "AWS"
-      identifiers = ["arn:aws:iam::${local.admin_account_id}:role/gha-app-deploy-dev"] # one role, not the account
+      identifiers = ["arn:aws:iam::${var.admin_account_id}:role/gha-app-deploy-dev"] # one role, not the account
     }
   }
 }
