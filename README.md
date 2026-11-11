@@ -51,13 +51,13 @@ is the decision); a merge goes through `dev` (required reviewer). All of them sh
 
 | File | What |
 |---|---|
-| `versions.tf` | one provider, sketch-dev; credentials from the environment (the CI role in CI, `assume_role_arn` locally) |
+| `versions.tf` | one provider, sketch-dev; credentials from the environment (the CI role in CI, `assume_role_name` locally) |
 | `ecr.tf` | registry (`force_delete`: goes away with the stack), lifecycle policy, push access for the CI build role |
 | `network.tf` | default VPC lookup, security groups (ALB :80 → tasks :8080) |
 | `alb.tf` | load balancer, target group, HTTP listener |
 | `ecs.tf` | cluster, logs, execution role (with the permissions boundary), task definition, service |
 | `deploy_role.tf` | `app-deploy`: the role the kantor deploy job uses (with the permissions boundary) |
-| `variables.tf` | account ids (validated, no defaults); `assume_role_arn` (local runs only); `desired_count`: 1 = on, 0 = app stopped |
+| `variables.tf` | account ids (validated, no defaults); `assume_role_name` (local runs only); `desired_count`: 1 = on, 0 = app stopped |
 | `*.example` | templates for the two local files kept out of git: `accounts.auto.tfvars`, `backend.local.hcl` |
 | `.github/workflows/` | `terraform` (PR plan), `terraform-apply` (after merge, only while up), `env-switch` (up / down, nightly down) |
 | `.terraform-version`, `.tflint.hcl` | Terraform version for CI, tflint rules (same as sketch-infra) |
@@ -81,7 +81,7 @@ is the decision); a merge goes through `dev` (required reviewer). All of them sh
 
 ```bash
 cd terraform
-cp accounts.auto.tfvars.example accounts.auto.tfvars   # fill in the account ids and assume_role_arn
+cp accounts.auto.tfvars.example accounts.auto.tfvars   # fill in the account ids and assume_role_name
 cp backend.local.hcl.example backend.local.hcl          # fill in the state bucket
 AWS_PROFILE=sketch-root terraform init -backend-config=backend.hcl -backend-config=backend.local.hcl
 AWS_PROFILE=sketch-root terraform plan

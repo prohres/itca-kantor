@@ -1,4 +1,4 @@
 # Copy to accounts.auto.tfvars (not in git); Terraform loads it automatically. CI sets these itself.
 account_id       = "<workload-account-id>"
 admin_account_id = "<ci-hub-account-id>"
-assume_role_arn  = "arn:aws:iam::<workload-account-id>:role/OrganizationAccountAccessRole"
+assume_role_name = "OrganizationAccountAccessRole"

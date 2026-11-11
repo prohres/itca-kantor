@@ -16,13 +16,13 @@ variable "admin_account_id" {
   }
 }
 
-variable "assume_role_arn" {
+variable "assume_role_name" {
   description = "Local runs only: role to assume in sketch-dev (OrganizationAccountAccessRole); CI already runs as its role there"
   type        = string
   default     = null
   validation {
-    condition     = var.assume_role_arn == null || can(regex("^arn:aws:iam::[0-9]{12}:role/", var.assume_role_arn))
-    error_message = "An IAM role ARN, or null."
+    condition     = var.assume_role_name == null || can(regex("^[A-Za-z0-9+=,.@_-]{1,64}$", var.assume_role_name))
+    error_message = "An IAM role name (not an ARN), or null."
   }
 }
 
