@@ -8,10 +8,10 @@ on:
         type: choice
         options: [up, down]
   schedule:
-    # Nightly down at 23:00 Europe/Kyiv. Cron is UTC only and Kyiv is UTC+2 / UTC+3, so both run;
-    # the guard lets through 23:xx and 00:xx Kyiv (a second down is a no-op), never 22:xx.
-    - cron: "0 20 * * *"
-    - cron: "0 21 * * *"
+    # Nightly down at 23:07 Europe/Kyiv. Cron is UTC only and Kyiv is UTC+2 / UTC+3, so both run;
+    # the guard keeps the one slot that is 23:xx in Kyiv. Off the hour: :00 is GitHub's busiest slot.
+    - cron: "7 20 * * *"
+    - cron: "7 21 * * *"
 
 # One apply at a time across merge, up, down and the nightly down
 concurrency:
@@ -34,9 +34,13 @@ jobs:
         env:
           EVENT: ${{ github.event_name }}
           INPUT: ${{ inputs.action }}
+          SCHEDULE: ${{ github.event.schedule }}
         run: |
           if [[ "$EVENT" == schedule ]]; then
-            case "$(TZ=Europe/Kyiv date +%H)" in 23|00) action=down ;; *) action=skip ;; esac
+            # Judge by the slot that fired, not the start time: GitHub can start a scheduled run hours late
+            utc_hour=$(awk '{print $2}' <<< "$SCHEDULE")
+            kyiv_hour=$(TZ=Europe/Kyiv date -d "$(date -u +%F) ${utc_hour}:00 UTC" +%H)
+            if [[ "$kyiv_hour" == 23 ]]; then action=down; else action=skip; fi
           else
             action="$INPUT"
           fi

@@ -40,7 +40,7 @@ rolled back to.
 | Workflow | When | What |
 |---|---|---|
 | `env-switch` | Actions → Run workflow: `up` / `down` | `up`: plan → apply the whole stack; then run kantor → app to build and deploy. `down`: plan `-destroy` → destroy everything, registry and images included |
-| `env-switch` | daily 23:00 Europe/Kyiv | `down`; a stack that is already down is a no-op |
+| `env-switch` | daily 23:07 Europe/Kyiv | `down` (decided by the cron slot, so a late start still counts); a stack that is already down is a no-op |
 | `terraform` | pull request | plan as a PR comment (tflint + checkov first, no AWS access) |
 | `terraform-apply` | merge to `develop` | stack up: plan → approval in `dev` → apply. Stack down: nothing; the next `up` applies this commit |
 
@@ -72,7 +72,7 @@ is the decision); a merge goes through `dev` (required reviewer). All of them sh
 | `app-deploy` can update this one service and pass only the execution role to `ecs-tasks` | CI rolls out new revisions but can't change the infrastructure or hand the service another role; it may read load balancers to find the smoke URL (Describe only) |
 | Public IP on tasks instead of NAT | NAT costs more than the whole demo; the task security group accepts traffic only from the ALB |
 | Account ids out of git (local tfvars here, repo variables in CI) | the repos are public; ids aren't secrets, but they are free reconnaissance |
-| Whole stack up / down from Actions, nightly down at 23:00 Kyiv | the demo costs money only while it runs; nobody has to remember to switch it off |
+| Whole stack up / down from Actions, nightly down at 23:07 Kyiv | the demo costs money only while it runs; nobody has to remember to switch it off |
 | A merge while the stack is down applies nothing | no approval request that would bring the stack up by accident; the next up applies the latest code |
 | CI roles and the permissions boundary live in sketch-infra (`ci/`) | down must not delete the roles it runs as; CI here can create the stack's two IAM roles only with a boundary it can't change |
 | Every checkov skip has a reason inline | HTTP without TLS, no WAF / access logs: accepted for the demo, listed in the roadmap |
